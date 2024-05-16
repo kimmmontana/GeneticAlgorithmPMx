@@ -1,6 +1,6 @@
 import random
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from constants import POPULATION_SIZE, GENERATIONS, MUTATION_RATE, CROSSOVER_RATE, CROSS_SECTION_1, CROSS_SECTION_2
 
 class Point:
@@ -46,7 +46,6 @@ def map_city(individual, generation, fitness):
     # plt.figure(figsize=(10, 8))
     plt.plot(x_coords + [x_coords[0]], y_coords + [y_coords[0]], marker='o')
 
-    # Plot the cities
     for i, city in enumerate(individual):
         if i == 0:
             plt.plot(cities[city-1].coordinate.x, cities[city-1].coordinate.y, marker='o', markersize=10, color='red')
@@ -79,6 +78,20 @@ def initialize_population():
         population.append(individual)
     return population
 
+
+def select_parents(population: list, fitness: list):
+    # print(f"\n\nPOPULATION: {population}\n\nLENGTH:{len(population)}")
+    total_fitness = sum(fitness)
+    probabilities = [f / total_fitness for f in fitness]
+    parents_index = np.random.choice(len(population), size=2, p=probabilities, replace=False)
+    parents = [population[parents_index[0]], population[parents_index[1]]]
+    population.remove(parents[0])
+    population.remove(parents[1])
+    fitness1, fitness2 = fitness[parents_index[0]], fitness[parents_index[1]]
+    fitness.remove(fitness1)
+    fitness.remove(fitness2)
+    return parents
+    
 def evaluate_fitness(individual):
     total_distance = 0
     for i in range(len(individual) - 1):
@@ -87,12 +100,6 @@ def evaluate_fitness(individual):
         total_distance += distance_matrix[from_city][to_city]
     total_distance += distance_matrix[individual[-1] - 1][individual[0] - 1]
     return total_distance
-
-def select_parents(population, fitness):
-    total_fitness = sum(fitness)
-    probabilities = [f / total_fitness for f in fitness]
-    parents = random.choices(population, weights=probabilities, k=2)
-    return parents
 
 def pmx(parent1, parent2):
     if random.random() > CROSSOVER_RATE:
@@ -132,7 +139,9 @@ def genetic_algorithm(population):
         new_population = []
         for _ in range(POPULATION_SIZE // 2):
             parent1, parent2 = select_parents(population, fitness)
+            print(f"Generation {generation+1}: Parents #{_+1} chosen: {parent1}, {parent2}")
             offspring1, offspring2 = pmx(parent1[:], parent2[:])
+            print(f"Generation {generation+1}: Offspring #{_+1} generated: {offspring1}, {offspring2}")
             new_population.append(mutate(offspring1))
             new_population.append(mutate(offspring2))
 
@@ -155,7 +164,7 @@ def genetic_algorithm(population):
     return best_individual, best_fitness, fitness_graph
 
 num_cities = len(cities)
-distance_matrix = np.zeros((num_cities, num_cities))
+distance_matrix = [[0 for _ in range(num_cities)] for _ in range(num_cities)]
 for i in range(num_cities):
     for j in range(num_cities):
         if i != j:
